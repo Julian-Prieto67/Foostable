@@ -39,8 +39,8 @@ class FoosBot:
         # self.LEDtemplate = cv.imread('C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/liveFrames/Template_62.png', cv.IMREAD_GRAYSCALE)
         self.LEDtemplates = []
         for template_path in [
-                            'C:\Users\juls6\Documents\GitHub\Foostable\templates\Usedtemplates\Template_0.png',
-                            'C:\Users\juls6\Documents\GitHub\Foostable\templates\Usedtemplates\Template_62.png',
+                            'C:\\Users\\juls6\\Documents\\GitHub\\Foostable\\templates\\Usedtemplates\\Template_0.png',
+                            'C:\\Users\\juls6\\Documents\\GitHub\\Foostable\\templates\\Usedtemplates\\Template_62.png',
         ]:
             template = cv.imread(template_path, cv.IMREAD_GRAYSCALE)
             self.LEDtemplates.append(template)
@@ -48,7 +48,7 @@ class FoosBot:
         for template_path in [
                             # 'liveFrames\Template_23.png',
                             # 'liveFrames\Template_46.png',
-                            'liveFrames\Template_25.png',
+                            r'C:/Users/juls6/Documents/GitHub/Foostable/templates/Usedtemplates/Template_25.png',
                         ]:
             template = cv.imread(template_path, cv.IMREAD_GRAYSCALE)
             self.Balltemplates.append(template)
@@ -58,7 +58,7 @@ class FoosBot:
         self.args = self.parser.parse_args()  
 
         # video_path = 'C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/Sample_Video/11-6-LightSample.mp4'
-        video_path = 'C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/Sample_Video/11-6LightSample2.mp4'
+        video_path = '11-6LightSample2.mp4'
         self.current_frame = None
         self.current_frameHSV = None
         self.camera_matrix = None

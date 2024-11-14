@@ -7,6 +7,7 @@ import moteus
 class Rod:
     def __init__(self, Player, Control = True):
         self.Player = Player
+        self.name = ""
         self.rodPos = 0 ##Current position of rod  (mm)
         self.rodAngle = 0 ##current angle of rod
         self.PlayerBoundaries = [] ##List of lateral reach boundaries of player positions
@@ -85,7 +86,6 @@ class Rod:
         self.Kickball_timer = time.time()
         self.rest = 0 #puts the rod down (rad)
         self.kickAngle = 1 #(rad) to kick ball from wherever
-        
         # await self.mot.set_stop()
         self.defineBoundaries()
 
@@ -97,6 +97,7 @@ class Rod:
 
 
         if (self.Player ==1):
+            self.name = "Goalie"
             self.PlayerBoundaries.append(self.G1_Boundary) ##Boundary of the 1st goalie position in mm
             self.PlayerBoundaries.append(self.G2_Boundary) ##Boundary of the 2nd goalie position in mm
             self.PlayerBoundaries.append(self.G3_Boundary) ##Boundary of the 3rd goalie position in mm
@@ -108,6 +109,7 @@ class Rod:
             self.x_level = self.G_xlevel
             self.playerOffsets = self.G_Offsets
         elif (self.Player ==2):
+            self.name = "Defense"
             self.PlayerBoundaries.append(self.D1_Boundary) ##Boundary of the 1st defense position in mm
             self.PlayerBoundaries.append(self.D2_Boundary) ##Boundary of the 2nd defense position in mm
             self.PlayerPositions.append(self.D1_Offset)
@@ -117,6 +119,7 @@ class Rod:
             self.x_level = self.D_xlevel
             self.playerOffsets = self.D_Offsets
         elif (self.Player ==3):
+            self.name = "Midfield"
             self.PlayerBoundaries.append(self.M1_Boundary) ##Boundary of the 1st mid position in mm
             self.PlayerBoundaries.append(self.M2_Boundary) ##Boundary of the 2nd mid position in mm
             self.PlayerBoundaries.append(self.M3_Boundary) ##Boundary of the 3rd mid position in mm
@@ -132,6 +135,7 @@ class Rod:
             self.x_level = self.M_xlevel
             self.playerOffsets = self.M_Offsets
         elif (self.Player ==4):
+            self.name = "Attack"
             self.PlayerBoundaries.append(self.F1_Boundary) ##Boundary of the 1st forward position in mm
             self.PlayerBoundaries.append(self.F2_Boundary) ##Boundary of the 2nd forward position in mm
             self.PlayerBoundaries.append(self.F3_Boundary) ##Boundary of the 3rd forward position in mm
