@@ -39,8 +39,8 @@ class FoosBot:
         # self.LEDtemplate = cv.imread('C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/liveFrames/Template_62.png', cv.IMREAD_GRAYSCALE)
         self.LEDtemplates = []
         for template_path in [
-                            'C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/liveFrames/Template_0.png',
-                            'C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/liveFrames/Template_62.png',
+                            'C:\Users\juls6\Documents\GitHub\Foostable\templates\Usedtemplates\Template_0.png',
+                            'C:\Users\juls6\Documents\GitHub\Foostable\templates\Usedtemplates\Template_62.png',
         ]:
             template = cv.imread(template_path, cv.IMREAD_GRAYSCALE)
             self.LEDtemplates.append(template)
