@@ -25,7 +25,7 @@ class Rod:
         ##EDGE OF ROD IS 19.05mm FROM EDGE OF TABLE and 638.175mm FROM EDGE OF TABLE
         ## THIS IS IGNORED TO ALLOW FOR FULL COVERAGE OF THE TABLE
 
-        ###REDO THE ROD BOUNDARIES AND X_LEVELS TO ACCOUNT FOR NEW COORDINATE SYSTEM
+        ##RANGES ARE ALL INCORRECT I THINK
         self.G1_Boundary = np.array([0, 225.425]) ##Boundary of the 1st goalie position in mm
         self.G2_Boundary = np.array([225.425, 434.975]) ##Boundary of the 2nd goalie position in mm
         self.G3_Boundary = np.array([431.8, 660.4]) ##Boundary of the 3rd goalie position in mm
@@ -33,9 +33,9 @@ class Rod:
         self.G2_Offset = 9.25*25.4
         self.G3_Offset = 17.375*25.4
         self.G_Offsets = [self.G1_Offset, self.G2_Offset, self.G3_Offset]
-        self.G_defaultpos = 1550
+        self.G_defaultpos = 1550 / self.mm2step
         self.G_xlevel = 3.75*25.4
-        self.G_range = [0, 2.55*25.4]
+        self.G_range = [0, 2.55*23 * np.pi]
         ##Alternate starting positions
         #self.defaultpos = 550
         
@@ -45,9 +45,9 @@ class Rod:
         self.D1_Offset = 1.125*25.4
         self.D2_Offset = 10.625*25.4
         self.D_Offsets = [self.D1_Offset, self.D2_Offset]
-        self.D_defaultpos = 3000
+        self.D_defaultpos = 3000 / self.mm2step
         self.D_xlevel = 9.625*25.4
-        self.D_range = [0, 5*25.4]
+        self.D_range = [0, 5*23*np.pi]
         ##Alternate starting positions
         #self.defaultpos = 900
         
@@ -62,9 +62,9 @@ class Rod:
         self.M4_Offset = 15.375*25.4
         self.M5_Offset = 20.125*25.4
         self.M_Offsets = [self.M1_Offset, self.M2_Offset, self.M3_Offset, self.M4_Offset, self.M5_Offset]
-        self.M_defaultpos = 800
+        self.M_defaultpos = 800 / self.mm2step
         self.M_xlevel = 21*25.4
-        self.M_range = [0, 1.53125*25.4]
+        self.M_range = [0, 1.53125*23*np.pi]
 
         self.F1_Boundary = np.array([0, 269.875]) ##Boundary of the 1st forward position in mm
         self.F2_Boundary = np.array([203.2, 454.025]) ##Boundary of the 2nd forward position in mm
@@ -73,9 +73,9 @@ class Rod:
         self.F2_Offset = 8.375*25.4
         self.F3_Offset = 15.625*25.4
         self.F_offset = [self.F1_Offset, self.F2_Offset, self.F3_Offset]
-        self.F_defaultpos = 200
+        self.F_defaultpos = 200/ self.mm2step
         self.F_xlevel = 32.125*25.4
-        self.F_range = [0, 3.1375*25.4]
+        self.F_range = [0, 3.1375*23*np.pi]
 
         ##MOTEUS CONTROLLER
         self.motor_state = None
@@ -87,6 +87,7 @@ class Rod:
         self.rest = 0 #puts the rod down (rad)
         self.kickAngle = 1 #(rad) to kick ball from wherever
         # await self.mot.set_stop()
+        self.blockingPlayer = None
         self.defineBoundaries()
 
         
@@ -148,14 +149,17 @@ class Rod:
             self.playerOffsets = self.F_offset
         else:
             print("Invalid Player Number")
-
+    def returnBlockingPlayer(self):
+        return self.blockingPlayer
     def blockBall(self, ballPos):
         ## Block the ball at the given position using the nearest player to the ball
         ## ballPos is the position of the ball in mm
         # print(ballPos)
         # print(self.x_level)
+
+        ###Something is wrong with
         if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos) or ballPos[0] < self.x_level:
-            print("Player " + str(self.Player) + " is in default position")   
+            # print("Player " + str(self.Player) + " is in default position")   
             self.setRodPos(self.defaultPos)
             return
         
@@ -163,11 +167,12 @@ class Rod:
         reachable_players = [player for player, boundary in enumerate(self.PlayerBoundaries) if ballPos[1] >= boundary[0] and ballPos[1] <= boundary[1]]
         if reachable_players == []:
             self.setRodPos(self.defaultPos)
+            self.blockingPlayer = None
             return
         # Find the nearest player to the ball among the reachable players
         distances = [abs(ballPos[1] - self.PlayerPositions[player]) for player in reachable_players]
         nearest_player = reachable_players[np.argmin(distances)]
-
+        self.blockingPlayer = nearest_player
         # Adjust the rod position based on the nearest player's position
         self.setRodPos((ballPos[1] - self.PlayerPositions[nearest_player]) + self.rodPos)
         return
@@ -187,6 +192,10 @@ class Rod:
     def returnRodPos(self):
         ##Return the rod position in steps
         PosString = str(int(self.rodPos * self.mm2step)) + '|'
+        return PosString
+    def returnRodPosmm(self):
+        ##Return the rod position in steps
+        PosString = self.rodPos
         return PosString
     def setRodAngle(self, angle):
         ##Set the rod angle in radians

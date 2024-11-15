@@ -30,10 +30,17 @@ class ArduinoFake(Arduino):
         return tuple(a + b for a, b in zip(a, b))
     def plotRodpos(self, rod, window):
         ##add text for the pos of rods
-        text = f"{rod.name}: {rod.returnRodPos()}"
+        text = f"{rod.name}: {rod.returnRodPosmm():.2f}"
         # cv.putText(window, text, ball_pos_image, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         text_loc = (int(rod.x_level), 20)
         cv.putText(window, text, text_loc, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+    def plotPlayerPos(self, rod, window):
+        ##add text for the pos of rods
+        for y in rod.returnPlayerPos():
+            player_num = rod.returnPlayerPos().index(y)
+            text = f"Player {player_num} Pos: {y[1]:.3f}"
+            text_loc = (int(rod.x_level)+20, int(y[1]))
+            cv.putText(window, text, text_loc, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
     def UpdateGui(self, ball_pos_real, corners_image, corners_real, ball_pos_image, GRod, DRod, MRod, ARod):
         # Create a green window
@@ -58,14 +65,22 @@ class ArduinoFake(Arduino):
         self.plotRodpos(DRod, window)
         self.plotRodpos(MRod, window)
         self.plotRodpos(ARod, window)
+        self.plotPlayerPos(GRod, window)
+        self.plotPlayerPos(DRod, window)
+        self.plotPlayerPos(MRod, window)
+        self.plotPlayerPos(ARod, window)
+
         
     
         # Draw the foosmen as dots 
         for player in [GRod, DRod, MRod, ARod]:
             posList = player.returnPlayerPos()
-            for pos in posList:
+            for index, pos in enumerate(posList):
                 pos = np.array(pos).astype(int)
-                cv.circle(window, self.tupleadd(pos,self.screen_offset), 2, (0, 0, 255), -1)
+                if index == player.returnBlockingPlayer():
+                    cv.circle(window, self.tupleadd(pos,self.screen_offset), 2, (0, 255, 255), -1)
+                else:
+                    cv.circle(window, self.tupleadd(pos,self.screen_offset), 2, (0, 0, 255), -1)
             
         self.gui = window
     def showGUI(self):

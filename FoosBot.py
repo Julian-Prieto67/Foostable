@@ -483,8 +483,12 @@ class FoosBot:
 
             self.ShowField()
             self.measureLoopTime()
-            if cv.waitKey(30) & 0xFF == ord('q'):
+            if cv.waitKey(47) & 0xFF == ord('q'):
                 break
+            if cv.waitKey(1) & 0xFF == ord('p'):
+                while True:
+                    if cv.waitKey(1) & 0xFF == ord('p'):
+                        break
         self.cam.release()
         cv.destroyAllWindows()
 
