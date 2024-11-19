@@ -14,7 +14,10 @@ from ArduinoClass import ArduinoFake, Arduino
 class FoosBot:
     def __init__(self, difficulty = 0):
         self.difficulty = difficulty
-        self.playback = True
+         ##PLAYBACK
+        self.gui = None
+        self.GUIFLAG = False
+        self.playback = False
 
         ##time variables
         self.tick = 0
@@ -65,11 +68,9 @@ class FoosBot:
         self.dist_coeffs = None
         self.rvecs = []
         self.tvecs = []
-        self.percentofCorner = 0.15
+        self.percentofCorner = 0.20
 
-        ##PLAYBACK
-        self.gui = None
-        self.GUIFLAG = True
+       
 
         ##DEPENDENCY INJECTION DECIDING BETWEEN PLAYBACK OR NOT
         if not self.playback:
@@ -105,6 +106,7 @@ class FoosBot:
         frame = cv.resize(frame, (640, 480), interpolation = cv.INTER_AREA)
         self.current_frame = frame
         self.current_frameHSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+        # self.ser.UpdateGui(self.ball_pos_real, self.corners_image,self.corners_real, self.ball_pos_image, self.GRod, self.DRod, self.MRod, self.ARod)
         self.ser.UpdateGui(self.ball_pos_real, self.corners_image,self.corners_real, self.ball_pos_image, self.GRod, self.DRod, self.MRod, self.ARod)
         return ret
     def ShowField(self):
@@ -411,7 +413,7 @@ class FoosBot:
         # await self.MRod.kickAtWill(self.ball_pos_real)
         # await self.ARod.kickAtWill(self.ball_pos_real)
         send = self.GRod.returnRodPos() + self.DRod.returnRodPos() + self.MRod.returnRodPos() + self.ARod.returnRodPos() + self.ENDCHAR
-        self.ser.write(send.encode('utf-8'))
+        self.ser.write(send)
     async def blockBall(self):
         #block the ball with the rods
         #find the position of the ball
@@ -451,7 +453,7 @@ class FoosBot:
         #calibrates the rods to their starting position
         #by sending "HOM" to the arduino
         send = 'HOM' + self.ENDCHAR
-        self.ser.write(send.encode('utf-8'))
+        self.ser.write(send)
 
     ##############################MAIN LOOP################################
     async def run(self):
@@ -462,7 +464,7 @@ class FoosBot:
         await self.ARod.clearFaults()
         # Load the data
         self.loadData()
-        time.sleep(2)  # Wait for the connection to be established
+        time.sleep(2) 
         
         self.tockercounter = 0
         self.tickertocker = 0
@@ -485,10 +487,10 @@ class FoosBot:
             self.measureLoopTime()
             if cv.waitKey(47) & 0xFF == ord('q'):
                 break
-            if cv.waitKey(1) & 0xFF == ord('p'):
-                while True:
-                    if cv.waitKey(1) & 0xFF == ord('p'):
-                        break
+            # if cv.waitKey(1) & 0xFF == ord('p'):
+            #     while True:
+            #         if cv.waitKey(1) & 0xFF == ord('p'):
+            #             break
         self.cam.release()
         cv.destroyAllWindows()
 

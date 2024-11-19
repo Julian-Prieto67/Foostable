@@ -9,12 +9,13 @@ class Arduino:
         self.baud_rate = 115200 #Arduino baud rate
         self.ser = serial.Serial(self.arduino_port,self.baud_rate, timeout = 1)
         self.serial_timer = time.time()
-        self.waittime = 0.1 ##time to wait between serial messages
+        self.waittime = 0.05 ##time to wait between serial messages
     def write(self, message):
-        if time.time() - self.serial_timer < self.waittime:
+        #messsage is a string
+        if time.time() - self.serial_timer > self.waittime:
             self.ser.write(message.encode())
             self.serial_timer = time.time()
-    def UpdateGui(self, ball_pos_real, corners_image, ball_pos_image, GRod, DRod, MRod, ARod):
+    def UpdateGui(self, ball_pos_real, corners_image, corners_real, ball_pos_image, GRod, DRod, MRod, ARod):
         pass
     def showGUI(self):
         pass
