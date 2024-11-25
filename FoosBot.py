@@ -10,14 +10,15 @@ import gc
 from RodClass import RodFake, RodReal
 import concurrent.futures
 from ArduinoClass import ArduinoFake, Arduino
+from multiprocessing import Process, Pipe
 
 class FoosBot:
     def __init__(self, difficulty = 0):
         self.difficulty = difficulty
          ##PLAYBACK
         self.gui = None
-        self.GUIFLAG = False
-        self.playback = False
+        self.GUIFLAG = True
+        self.playback = True
 
         ##time variables
         self.tick = 0
@@ -80,6 +81,8 @@ class FoosBot:
             self.ARod = RodReal(4) ##initializes attack rod
             self.ser = Arduino() ##initializes arduino
             self.cam = cv.VideoCapture(self.args.camera, cv.CAP_DSHOW)
+            self.cam.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+            self.cam.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
         else:
             self.GRod = RodFake(1) ##initializes goalie rod
             self.DRod = RodFake(2) ##initializes defense rod
@@ -103,18 +106,19 @@ class FoosBot:
         if not ret:
             print('Failed to read frame')
             return ret
-        frame = cv.resize(frame, (640, 480), interpolation = cv.INTER_AREA)
+        # frame = cv.resize(frame, (640, 480), interpolation = cv.INTER_AREA)
         self.current_frame = frame
         self.current_frameHSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
         # self.ser.UpdateGui(self.ball_pos_real, self.corners_image,self.corners_real, self.ball_pos_image, self.GRod, self.DRod, self.MRod, self.ARod)
-        self.ser.UpdateGui(self.ball_pos_real, self.corners_image,self.corners_real, self.ball_pos_image, self.GRod, self.DRod, self.MRod, self.ARod)
+        # self.ser.UpdateGui(self.ball_pos_real, self.corners_image,self.corners_real, self.ball_pos_image, self.GRod, self.DRod, self.MRod, self.ARod)
         return ret
     def ShowField(self):
         #displays the current frame of the camera 
         if self.current_frame is None:
             print('No frame to display')
             return
-        cv.imshow('Field', self.current_frame)
+        show_frame = cv.resize(self.current_frame, (640, 480), interpolation = cv.INTER_AREA)
+        cv.imshow('Field', show_frame)
         if self.GUIFLAG:
             self.ser.showGUI()
     def loadData(self):
@@ -245,45 +249,49 @@ class FoosBot:
         #roi_x is the x coordinate of the roi in the original image
         #roi_y is the y coordinate of the roi in the original image
         #returns the (x, y) coordinates of the LED in the original image
+        
         mask = mask[:,:,1]
         # Find contours of green LEDs
-        # contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         # Sort the contours based on area in descending order
-        # contours = sorted(contours, key=cv.contourArea, reverse=True)
+        contours = sorted(contours, key=cv.contourArea, reverse=True)
         
         #loop over the top 5 contours and find the LED x, y coordinates
-        # for cnt in contours[:]:
-        #     #get the area of the contour
-        #     area = cv.contourArea(cnt)
-        #     #conditionally set contour based on area
-        #     if area <500 and area > 5:
-        #         x, y, w, h = cv.boundingRect(cnt)
-        #         LED = (x + roi_x + w//2, y + roi_y + h//2)
-        #         cv.circle(self.current_frame, (LED[0], LED[1]), radius=10, color=(0, 255, 0), thickness=-1)
-        #         return LED
-        # LED = (0, 0)
-        # return LED
+        for cnt in contours[:]:
+            #get the area of the contour
+            area = cv.contourArea(cnt)
+            #conditionally set contour based on area
+            if area <500 and area > 5:
+                x, y, w, h = cv.boundingRect(cnt)
+                LED = [x + roi_x + w//2, y + roi_y + h//2]
+                cv.circle(self.current_frame, (LED[0], LED[1]), radius=3, color=(0, 255, 0), thickness=-1)
+                return LED
+        LED = [0, 0]
+        return LED
         
 
 
         ### DIFFERENT VERSION OF FINDING LED WITH IMAGE MATCHING
-        best_template, best_match_location = self.parallel_template_matching(self.LEDtemplates, mask)
-        if best_template is not None:
-            top_left = best_match_location
-            w, h = best_template.shape[::-1]
-            bottom_right = (top_left[0] + w, top_left[1] + h)
-            ledpos = [top_left[0] + w//2 +roi_x, top_left[1] + h//2 +roi_y]
-            cv.circle(self.current_frame, (ledpos[0], ledpos[1]), 5, (0, 255, 0), -1)
-            return ledpos
-        else:
-            ledpos = [0, 0]
+        # best_template, best_match_location = self.parallel_template_matching(self.LEDtemplates, mask)
+        # if best_template is not None:
+        #     top_left = best_match_location
+        #     w, h = best_template.shape[::-1]
+        #     bottom_right = (top_left[0] + w, top_left[1] + h)
+        #     ledpos = [top_left[0] + w//2 +roi_x, top_left[1] + h//2 +roi_y]
+        #     cv.circle(self.current_frame, (ledpos[0], ledpos[1]), 5, (0, 255, 0), -1)
+        #     return ledpos
+        # else:
+        #     ledpos = [0, 0]
+
+
+
     # Draw rectangles around matched regions
     # ball_list = []
     # w, h = template.shape[::-1]
     # for pt in zip(*loc[::-1]):
     #     cv.rectangle(frame, pt, (pt[0] + w, pt[1] + h), (0, 255, 0), 1)
     #     ball_list.append(pt)
-        return ledpos
+        # return ledpos
         # current_frame = mask[:,:,1]
         # best
         # min_val, max_val, min_loc, max_loc = cv.minMaxLoc(results)
@@ -363,6 +371,7 @@ class FoosBot:
         LED4 = self.findLED(roi4, int(width*(1-percentofCorner)), int(height*(1-percentofCorner)))
 
         #stack all LED positions into a 4x2 array
+
         corners_image = np.array([LED1, LED2, LED3, LED4])
         #make sure no corners are (0, 0) and if they are replace them with the previous found value
         count=0
@@ -400,7 +409,6 @@ class FoosBot:
             self.ball_pos_real = self.ball_pos_real.ravel()
         else: 
             self.ball_pos_real = np.array([0, 0])
-        
     async def moveRods(self):
         #moves the rods to whatever position stored in the rod classes
         ##send the rod positions to the stepper motor on a timer (so we don't overload the serial port)
@@ -423,7 +431,6 @@ class FoosBot:
         self.DRod.blockBall(self.ball_pos_real)
         self.MRod.blockBall(self.ball_pos_real)
         self.ARod.blockBall(self.ball_pos_real)
-
     def changeSpeed(self, speed):
         ## changes the speed of the stepper motor in steps per second max of like 100000
         send = 'SPD' + str(speed) + '|' + str(speed)+ '|' + str(speed)+'|' + str(speed)+'|'+ self.ENDCHAR
@@ -464,28 +471,29 @@ class FoosBot:
         await self.ARod.clearFaults()
         # Load the data
         self.loadData()
-        time.sleep(2) 
+        time.sleep(2)
         
         self.tockercounter = 0
         self.tickertocker = 0
         self.CalibrateRods()
+
         while True: 
             self.tick = time.time()
             # call this as often as possible to update current frames
             ret = self.UpdateFrame()
             if not ret:
                 break
-            self.undistort()
+            # self.undistort()
             ##Find the ball position IRL
-            self.getBallPos() ## MAKE FASTER
+            # self.getBallPos() ## MAKE FASTER
             
             ##insert strategy here
-            await self.blockBall()
-            await self.moveRods()
-
-            self.ShowField()
+            # await self.blockBall()
+            # await self.moveRods()
+            
+            # self.ShowField()
             self.measureLoopTime()
-            if cv.waitKey(47) & 0xFF == ord('q'):
+            if cv.waitKey(1) & 0xFF == ord('q'):
                 break
             # if cv.waitKey(1) & 0xFF == ord('p'):
             #     while True:
