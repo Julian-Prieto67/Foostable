@@ -34,7 +34,7 @@ class FoosBot:
         self.PREV_corners_image = np.array([[0, 0], [0, 0], [0, 0], [0, 0]])
         ### corners are in BL, BR, TL, TR order
         # self.corners_real = np.array([[19.75, 638.175], [1196.975, 647.7], [12.7,19.75], [1181.1, 19.05]]) OLD
-        ##Redo these from the bottom 
+        
         self.corners_real = np.array([[1.125*25.4, 25*25.4], [46.125*25.4, 24.875*25.4],[1.25*25.4, 0.625*25.4], [46.5*25.4, 0.5*25.4]])
 
         self.corners_real = np.array([[7/8*25.4, 25.25*25.4], [46.375*25.4, 25.25*25.4],[0.875*25.4, 0.625*25.4], [46.5*25.4, 0.75*25.4]])
@@ -461,9 +461,7 @@ class FoosBot:
         #by sending "HOM" to the arduino
         send = 'HOM' + self.ENDCHAR
         self.ser.write(send)
-
-    ##############################MAIN LOOP################################
-    async def run(self):
+    async def initializeClass(self):
         gc.collect()
         await self.GRod.clearFaults()
         await self.DRod.clearFaults()
@@ -477,6 +475,9 @@ class FoosBot:
         self.tickertocker = 0
         self.CalibrateRods()
 
+    ##############################MAIN LOOP################################
+    async def run(self):
+        self.initializeClass()
         while True: 
             self.tick = time.time()
             # call this as often as possible to update current frames
