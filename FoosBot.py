@@ -17,8 +17,8 @@ class FoosBot:
         self.difficulty = difficulty
          ##PLAYBACK
         self.gui = None
-        self.GUIFLAG = True
-        self.playback = True
+        self.GUIFLAG = False
+        self.playback = False
 
         ##time variables
         self.tick = 0
@@ -58,7 +58,7 @@ class FoosBot:
             self.Balltemplates.append(template)
         ##Camera Variables
         self.parser = argparse.ArgumentParser(description='Camera')
-        self.parser.add_argument('--camera', help='Camera divide number.', default=0, type=int)
+        self.parser.add_argument('--camera', help='Camera divide number.', default=1, type=int)
         self.args = self.parser.parse_args()  
 
         # video_path = 'C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/Sample_Video/11-6-LightSample.mp4'
@@ -81,8 +81,8 @@ class FoosBot:
             self.ARod = RodReal(4) ##initializes attack rod
             self.ser = Arduino() ##initializes arduino
             self.cam = cv.VideoCapture(self.args.camera, cv.CAP_DSHOW)
-            self.cam.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
-            self.cam.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
+            # self.cam.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
+            # self.cam.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
         else:
             self.GRod = RodFake(1) ##initializes goalie rod
             self.DRod = RodFake(2) ##initializes defense rod
@@ -477,7 +477,7 @@ class FoosBot:
 
     ##############################MAIN LOOP################################
     async def run(self):
-        self.initializeClass()
+        await self.initializeClass()
         while True: 
             self.tick = time.time()
             # call this as often as possible to update current frames
@@ -486,13 +486,13 @@ class FoosBot:
                 break
             # self.undistort()
             ##Find the ball position IRL
-            # self.getBallPos() ## MAKE FASTER
+            self.getBallPos() ## MAKE FASTER
             
             ##insert strategy here
-            # await self.blockBall()
-            # await self.moveRods()
+            await self.blockBall()
+            await self.moveRods()
             
-            # self.ShowField()
+            self.ShowField()
             self.measureLoopTime()
             if cv.waitKey(1) & 0xFF == ord('q'):
                 break

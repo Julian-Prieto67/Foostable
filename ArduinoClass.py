@@ -10,7 +10,7 @@ class Arduino:
         self.ser = serial.Serial(self.arduino_port,self.baud_rate, timeout = 1)
         self.serial_timer = time.time()
         self.waittime = 0.005 ##time to wait between serial messages or the messages jumble
-        
+
     def write(self, message):
         #messsage is a string
         if time.time() - self.serial_timer > self.waittime:

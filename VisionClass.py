@@ -26,7 +26,7 @@ class Vision:
 
         ##Camera Variables
         self.parser = argparse.ArgumentParser(description='Camera')
-        self.parser.add_argument('--camera', help='Camera divide number.', default=0, type=int)
+        self.parser.add_argument('--camera', help='Camera divide number.', default=1, type=int)
         self.args = self.parser.parse_args()
         # video_path = 'C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/Sample_Video/11-6-LightSample.mp4'
         video_path = '11-6LightSample2.mp4'
@@ -36,6 +36,7 @@ class Vision:
         self.dist_coeffs = None
         self.rvecs = []
         self.tvecs = []
+        self.loadData()
         self.percentofCorner = 0.20
         ##DEPENDENCY INJECTION DECIDING BETWEEN PLAYBACK OR NOT
         if not self.playback:
@@ -303,6 +304,8 @@ class Vision:
         if hmat is not None and ball is not [0,0] not in self.corners_image:
             self.ball_pos_real = cv.perspectiveTransform(ball, hmat)
             self.ball_pos_real = self.ball_pos_real.ravel()
+            return self.ball_pos_real
         else: 
             self.ball_pos_real = np.array([0, 0])
+            return self.ball_pos_real
     

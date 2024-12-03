@@ -6,6 +6,12 @@ from FoosBot import FoosBot
 from ArduinoClass import Arduino
 from ControlsClass import Controller
 from VisionClass import Vision
+import asyncio
+
+
+
+playback = True
+
 
 global start_time
 global timer_counter
@@ -32,8 +38,8 @@ def ControlTimer():
 
     Accumulated_time = Accumulated_time + time_passed 
     timer_counter += 1
-    if timer_counter > 100:
-        print("Average time for 100 calls to Controls function:")
+    if timer_counter > 1e5:
+        print("Average time for 1e5 calls to Controls function:")
         print(Accumulated_time / timer_counter)
         timer_counter = 0
         Accumulated_time = 0
@@ -57,25 +63,23 @@ def VisionTimer():
         Accumulated_time2 = 0
     return time_passed
 
-def vision_process(queue):
-    Vision = Vision(playback = False)
+def vision_process(queue, playback):
+    vision = Vision(playback)
     while True:
     ##find the ball and send data to the queue
-        BallPos = (0, 0)
-        
         ##FIND THE POSITION OF THE BALL
-
-
-        
+        vision.UpdateFrame()
+        BallPos = vision.getBallPos()
+        print(BallPos)
         ##send the data to the queue
         queue.put(BallPos)
         ##Time the function
         VisionTimer()
 
 
-def Controls_process(queue):
-    Controls = Controller(playback = False)
-    
+def Controls_process(queue, playback):
+    Controls = Controller(playback)
+    asyncio.run(Controls.initializeClass())
     while True:
     ##get the data from the queue and move the rods
         if not queue.empty():
@@ -83,11 +87,15 @@ def Controls_process(queue):
             BallPos = queue.get()
             ##STRATEGY HERE
             ##Move the rods to the new position
-
-
+            Controls.newBallPos(BallPos)
         else:
             ##No new position found, use KF to interpolate
-            pass
+            BallPos = Controls.KalmanFilter()
+        
+
+        ##move the rods to block the ball
+        Controls.blockBall()
+
         ##Time the function
         ControlTimer()
 
@@ -95,18 +103,16 @@ def Controls_process(queue):
 if __name__ == "__main__":
     ##Create the queue
     queue = mp.Queue()
-    FoosBot = FoosBot()
-    FoosBot.initializeClass()
 
     ##Create the processes
-    vision = mp.Process(target=vision_process, args=(queue,))
-    Controls = mp.Process(target=Controls_process, args=(queue,))
+    vision = mp.Process(target=vision_process, args=(queue, playback))
+    controls = mp.Process(target=Controls_process, args=(queue,playback))
 
     ##Start the processes
     vision.start()
-    Controls.start()
+    controls.start()
 
     ##Not sure if this is needed because the above processes are always running?
     vision.join()
-    Controls.join()
+    controls.join()
     
