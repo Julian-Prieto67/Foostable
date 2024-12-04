@@ -86,8 +86,9 @@ class ArduinoFake(Arduino):
             
         self.gui = window
     def showGUI(self):
-        cv.imshow("GUI", self.gui)
+        showthis = cv.resize(self.gui, (640, 480))
+        cv.imshow("GUI", showthis)
         cv.waitKey(1)
-        
+
 
     

@@ -37,8 +37,8 @@ def ControlTimer():
 
     Accumulated_time = Accumulated_time + time_passed 
     timer_counter += 1
-    if timer_counter > 1e5:
-        print("Average time for 1e5 calls to Controls function:")
+    if timer_counter > 1e2:
+        print("Average time for 100 calls to Controls function:")
         print(Accumulated_time / timer_counter)
         timer_counter = 0
         Accumulated_time = 0
@@ -86,7 +86,7 @@ def Controls_process(queue, playback):
             controls.UpdateBallPos(BallPos)
         # Controls.newBallPos(BallPos)
         
-    ##get the data from the queue and move the rods
+        ##get the data from the queue and move the rods
         # if not queue.empty():
         #     ##get the data from the queue A NEW POSITION IS FOUND
         #     BallPos = queue.get()
