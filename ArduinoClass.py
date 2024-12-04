@@ -10,6 +10,7 @@ class Arduino:
         self.ser = serial.Serial(self.arduino_port,self.baud_rate, timeout = 1)
         self.serial_timer = time.time()
         self.waittime = 0.005 ##time to wait between serial messages or the messages jumble
+        self.max_speed = 0 ##this is the max speed reached
 
     def write(self, message):
         #messsage is a string
@@ -44,7 +45,7 @@ class ArduinoFake(Arduino):
             text_loc = (int(rod.x_level)+20, int(y[1]))
             cv.putText(window, text, text_loc, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
-    def UpdateGui(self, ball_pos_real, corners_real, GRod, DRod, MRod, ARod):
+    def UpdateGui(self, ball_pos_real, corners_real, GRod, DRod, MRod, ARod, ball_speed):
         # Create a green window
         #every pixel is a mm
         window = np.zeros((660+self.screen_offset[1], 1203 +self.screen_offset[0], 3), dtype=np.uint8)
@@ -59,7 +60,7 @@ class ArduinoFake(Arduino):
         ball_pos_real = self.tupleadd(ball_pos_real.astype(int), self.screen_offset)
         cv.circle(window, ball_pos_real, 5, (0, 255, 255), -1)
         # Add text at the position of the circle
-        text = f"Ball Position: {ball_pos_real}"
+        text = f"Ball Position: {ball_pos_real}\n Ball Speed: {ball_speed}"
         # cv.putText(window, text, ball_pos_image, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         text_loc = (int(window.shape[1] / 2), 50)
         cv.putText(window, text, text_loc, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)

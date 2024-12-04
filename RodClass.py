@@ -5,8 +5,8 @@ import math
 import moteus
 
 class Rod:
-    def __init__(self, Player, Control = True):
-        self.Player = Player
+    def __init__(self, Player):
+        self.Player = Player #1-4 for goalie, defense, midfield, attack
         self.name = ""
         self.rodPos = 0 ##Current position of rod  (mm)
         self.rodAngle = 0 ##current angle of rod
@@ -76,6 +76,7 @@ class Rod:
         self.F_xlevel = 32.125*25.4
         self.F_range = [0, 3.1375*23*np.pi]
 
+
         ##MOTEUS CONTROLLER
         self.motor_state = None
         self.kickTimer = time.time()
@@ -83,6 +84,7 @@ class Rod:
         self.vel_lim = 55
 
         self.Kickball_timer = time.time()
+        self.angle_up = math.radians(-90) #puts the rod up (rad)
         self.rest = 0 #puts the rod down (rad)
         self.kickAngle = 1 #(rad) to kick ball from wherever
         # await self.mot.set_stop()
@@ -152,10 +154,7 @@ class Rod:
     def blockBall(self, ballPos):
         ## Block the ball at the given position using the nearest player to the ball
         ## ballPos is the position of the ball in mm
-        # print(ballPos)
-        # print(self.x_level)
 
-        ###Something is wrong with
         if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos) or ballPos[0] < self.x_level:
             # print("Player " + str(self.Player) + " is in default position")   
             self.setRodPos(self.defaultPos)
@@ -177,9 +176,16 @@ class Rod:
     
     async def clearFaults(self):
         await self.mot.set_stop()
-        return
+    
     def goHome(self):
+        ##sets the default angle
+        if self.Player == 4:
+            self.setRodAngle(self.angle_up)
+        else:
+            self.setRodAngle(self.rest)
+        ##sets the positions
         self.setRodPos(self.defaultPos)
+
     def setRodPos(self, p):
         ## Set the rod position in mm 
         ## This clips the position to the range of the rods
@@ -188,20 +194,32 @@ class Rod:
         self.rodPos = p
         self.rodPos = np.clip(self.rodPos, self.RodRange[0], self.RodRange[1])
         self.PlayerPositions = [self.rodPos+ pos for pos in self.playerOffsets]
+
     def returnRodPos(self):
         ##Return the rod position in steps
         PosString = str(int(self.rodPos * self.mm2step)) + '|'
         return PosString
+    
     def returnRodPosmm(self):
         ##Return the rod position in steps
         PosString = self.rodPos
         return PosString
+    
     def setRodAngle(self, angle):
         ##Set the rod angle in radians
         ##returns the current angle in radians as a float
         self.rodAngle = angle
         self.kick = True
 
+    def checkBall(self, ballPos):
+        ##Check if the ball is in the range of the rod
+        ##Returns true if the ball is in range of the rod
+        if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos):
+            return False
+        ##checks within an inch of the x-level for each player
+        if ballPos[0] > self.x_level - 25.4 and ballPos[0] < self.x_level + 25.4:
+            return True
+        return False
 
     async def kickAtWill(self, ballPos):
         ##Kick the ball whenever the rod is in position
@@ -215,37 +233,24 @@ class Rod:
             self.setRodAngle(self.rest)
             await self.RotateRod(kick = False)
 
-
-
     async def RotateRod(self, kick = False):
         pass
-    def returnMotorState(self):
-        return self.motor_state
+
     def returnPlayerPos(self):
         playerPos = []
         for player in self.PlayerPositions:
             playerPos.append((self.x_level, player))
         return playerPos
 
-# if __name__ == "__main__":
-#     # test = asyncio.run(Rod(1))
-#     test = Rod(1)
-#     print(test.PlayerBoundaries)
-#     print(test.PlayerPositions)
-
-#     print(test.blockBall([200,400]))
-
 class RodReal(Rod):
-    def __init__(self, Player, Control=True):
-        super().__init__(Player, Control)
+    def __init__(self, Player):
+        super().__init__(Player)
         self.mot = moteus.Controller(self.Player)
+    
     async def RotateRod(self, kick = False):
         ##called as much as possible. Will rotate the rod to the currrent rodAngle
-        ##
-        # print("rotation Started id:" + str(self.Player))
+
         if kick and (time.time() - self.kickTimer > 1.3):
-            
-            # print("enterif ")
             await self.mot.set_position(
             position=self.kickAngle,
             velocity = 55,

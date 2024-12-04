@@ -1,15 +1,16 @@
 import cv2
-frame_num = 0
+frame_num = 3
 def save_frame(frame, temp_count, frame_num):
     temp_count = frame_num
     # cv2.imwrite(f"Sample_Video\sample1\Frame_{frame_num}_Templates\Template_{temp_count}.png", frame)
     # print(f"Template saved as Template_{temp_count}.png")
-    cv2.imwrite(f"LiveFrames\Template_{temp_count}.png", frame)
+    cv2.imwrite(f"templates\Frames\liveFrames\\NEWTemplate_{temp_count}.png", frame)
     print(f"Template saved as Template_{temp_count}.png")
 
 def main():
     # image_path = f"Sample_Video\sample1\Frame_{frame_num}.png"
-    image_path = f"liveFrames\Frame_{frame_num}.png"
+    # image_path = f"liveFrames\Frame_{frame_num}.png"
+    image_path = "templates\Frames\liveFrames\\NEWFrame_0.png"
     frame = cv2.imread(image_path)
     frame = cv2.resize(frame, (640, 480))
     frame_copy = frame.copy()

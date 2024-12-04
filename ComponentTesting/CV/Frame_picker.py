@@ -9,7 +9,7 @@ def main():
     # video_path = 'Sample_Video/NormalGRAYConditions1.mp4'
     # video_path = 'Sample_Video/Normal conditions1.mp4'
     parser = argparse.ArgumentParser(description='Code for Thresholding Operations using inRange tutorial.')
-    parser.add_argument('--camera', help='Camera divide number.', default=0, type=int)
+    parser.add_argument('--camera', help='Camera divide number.', default=1, type=int)
     args = parser.parse_args()
     # cap = cv2.VideoCapture(video_path)
     cap = cv2.VideoCapture(args.camera, cv2.CAP_DSHOW)

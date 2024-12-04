@@ -37,12 +37,13 @@ def ControlTimer():
 
     Accumulated_time = Accumulated_time + time_passed 
     timer_counter += 1
-    if timer_counter > 1e2:
-        print("Average time for 100 calls to Controls function:")
+    if timer_counter > 5e2:
+        print("Average time for 500 calls to Controls function:")
         print(Accumulated_time / timer_counter)
         timer_counter = 0
         Accumulated_time = 0
     return time_passed
+
 def VisionTimer():
     ##returns the amount of time that has passed since the last time it was called
     ##prints the average of 100 calls to the function
@@ -55,8 +56,8 @@ def VisionTimer():
 
     Accumulated_time2 = Accumulated_time2 + time_passed 
     timer_counter2 += 1
-    if timer_counter2 > 100:
-        print("Average time for 100 calls to Vision function:")
+    if timer_counter2 > 500:
+        print("Average time for 500 calls to Vision function:")
         print(Accumulated_time2 / timer_counter2)
         timer_counter2 = 0
         Accumulated_time2 = 0
@@ -69,10 +70,12 @@ def vision_process(queue, playback):
         ##FIND THE POSITION OF THE BALL
         vision.UpdateFrame()
         BallPos = vision.getBallPos()
-        vision.ShowField()
+        print(BallPos)
+
         ##send the data to the queue
         queue.put(BallPos)
         ##Time the function
+        vision.ShowField()
         VisionTimer()
 
 
@@ -80,30 +83,12 @@ def Controls_process(queue, playback):
     controls = Controller(playback)
     asyncio.run(controls.initializeClass())
     while True:
-        controls.showGUI()
+        if playback:
+            controls.showGUI()
         if not queue.empty():
             BallPos = queue.get()
             controls.UpdateBallPos(BallPos)
-        # Controls.newBallPos(BallPos)
-        
-        ##get the data from the queue and move the rods
-        # if not queue.empty():
-        #     ##get the data from the queue A NEW POSITION IS FOUND
-        #     BallPos = queue.get()
-        #     ##STRATEGY HERE
-        #     ##Move the rods to the new position
-        #     Controls.newBallPos(BallPos)
-        # else:
-        #     ##No new position found, use KF to interpolate
-        #     BallPos = Controls.KalmanFilter()
-        
-
-        ##move the rods to block the ball
-        asyncio.run(controls.blockBall())
-        ##move the rods to the new position
-        asyncio.run(controls.moveRods())
-
-        ##Time the function
+        asyncio.run(controls.Play())
         ControlTimer()
 
 

@@ -20,7 +20,8 @@ class Vision:
         for template_path in [
                             # 'templates\Frames\liveFrames\Template_23.png',
                             # 'templates\Frames\liveFrames\Template_46.png',
-                            r'C:/Users/juls6/Documents/GitHub/Foostable/templates/Usedtemplates/Template_25.png',
+                            # r'C:/Users/juls6/Documents/GitHub/Foostable/templates/Usedtemplates/Template_25.png',
+                            'templates\\Frames\\liveFrames\\NEWTemplate_3.png',
                         ]:
             template = cv.imread(template_path, cv.IMREAD_GRAYSCALE)
             self.Balltemplates.append(template)
@@ -41,11 +42,11 @@ class Vision:
         self.percentofCorner = 0.20
         ##DEPENDENCY INJECTION DECIDING BETWEEN PLAYBACK OR NOT
         if self.playback:
+            self.cam = cv.VideoCapture(video_path)
+        else:
             self.cam = cv.VideoCapture(self.args.camera, cv.CAP_DSHOW)
             # self.cam.set(cv.CAP_PROP_FRAME_WIDTH, 1920)
             # self.cam.set(cv.CAP_PROP_FRAME_HEIGHT, 1080)
-        else:
-            self.cam = cv.VideoCapture(video_path)
         
 
 ##################METHODS##################
@@ -85,16 +86,9 @@ class Vision:
     
     def ShowField(self):
         #displays the current frame of the camera 
-        if self.current_frame is None:
-            print('No frame to display')
-            return
-        show_frame = self.current_frame
-        if self.displayFrame:
-            cv.imshow('Field', show_frame)
-        if cv.waitKey(1) & 0xFF == ord('q'):
-            self.displayFrame = False
-        # if self.GUIFLAG:
-        #     self.ser.showGUI()
+        cv.imshow('FoosTable', self.current_frame)
+        cv.waitKey(1)
+
 
     def undistort(self):
         h, w = self.current_frame.shape[:2]
