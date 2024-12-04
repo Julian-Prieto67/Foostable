@@ -44,7 +44,7 @@ class ArduinoFake(Arduino):
             text_loc = (int(rod.x_level)+20, int(y[1]))
             cv.putText(window, text, text_loc, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
-    def UpdateGui(self, ball_pos_real, corners_image, corners_real, ball_pos_image, GRod, DRod, MRod, ARod):
+    def UpdateGui(self, ball_pos_real, corners_real, GRod, DRod, MRod, ARod):
         # Create a green window
         #every pixel is a mm
         window = np.zeros((660+self.screen_offset[1], 1203 +self.screen_offset[0], 3), dtype=np.uint8)
@@ -87,5 +87,7 @@ class ArduinoFake(Arduino):
         self.gui = window
     def showGUI(self):
         cv.imshow("GUI", self.gui)
+        cv.waitKey(1)
+        
 
     

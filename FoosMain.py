@@ -9,8 +9,7 @@ from VisionClass import Vision
 import asyncio
 
 
-
-playback = True
+playback = False
 
 
 global start_time
@@ -70,7 +69,7 @@ def vision_process(queue, playback):
         ##FIND THE POSITION OF THE BALL
         vision.UpdateFrame()
         BallPos = vision.getBallPos()
-        print(BallPos)
+        vision.ShowField()
         ##send the data to the queue
         queue.put(BallPos)
         ##Time the function
@@ -78,23 +77,31 @@ def vision_process(queue, playback):
 
 
 def Controls_process(queue, playback):
-    Controls = Controller(playback)
-    asyncio.run(Controls.initializeClass())
+    controls = Controller(playback)
+    asyncio.run(controls.initializeClass())
     while True:
-    ##get the data from the queue and move the rods
+        controls.showGUI()
         if not queue.empty():
-            ##get the data from the queue A NEW POSITION IS FOUND
             BallPos = queue.get()
-            ##STRATEGY HERE
-            ##Move the rods to the new position
-            Controls.newBallPos(BallPos)
-        else:
-            ##No new position found, use KF to interpolate
-            BallPos = Controls.KalmanFilter()
+            controls.UpdateBallPos(BallPos)
+        # Controls.newBallPos(BallPos)
+        
+    ##get the data from the queue and move the rods
+        # if not queue.empty():
+        #     ##get the data from the queue A NEW POSITION IS FOUND
+        #     BallPos = queue.get()
+        #     ##STRATEGY HERE
+        #     ##Move the rods to the new position
+        #     Controls.newBallPos(BallPos)
+        # else:
+        #     ##No new position found, use KF to interpolate
+        #     BallPos = Controls.KalmanFilter()
         
 
         ##move the rods to block the ball
-        Controls.blockBall()
+        asyncio.run(controls.blockBall())
+        ##move the rods to the new position
+        asyncio.run(controls.moveRods())
 
         ##Time the function
         ControlTimer()

@@ -25,7 +25,6 @@ class Rod:
         ##EDGE OF ROD IS 19.05mm FROM EDGE OF TABLE and 638.175mm FROM EDGE OF TABLE
         ## THIS IS IGNORED TO ALLOW FOR FULL COVERAGE OF THE TABLE
 
-        ##RANGES ARE ALL INCORRECT I THINK
         self.G1_Boundary = np.array([0, 225.425]) ##Boundary of the 1st goalie position in mm
         self.G2_Boundary = np.array([225.425, 434.975]) ##Boundary of the 2nd goalie position in mm
         self.G3_Boundary = np.array([431.8, 660.4]) ##Boundary of the 3rd goalie position in mm
@@ -94,7 +93,6 @@ class Rod:
     def defineBoundaries(self):
         # Define the boundaries of where each player can move
 
-        ##DOES NOT ACCOUNT FOR FOOT WIDTH
 
 
         if (self.Player ==1):
@@ -180,7 +178,8 @@ class Rod:
     async def clearFaults(self):
         await self.mot.set_stop()
         return
-
+    def goHome(self):
+        self.setRodPos(self.defaultPos)
     def setRodPos(self, p):
         ## Set the rod position in mm 
         ## This clips the position to the range of the rods
