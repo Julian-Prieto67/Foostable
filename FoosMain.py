@@ -9,7 +9,7 @@ from VisionClass import Vision
 import asyncio
 
 
-playback = False
+playback = True
 
 
 global start_time
