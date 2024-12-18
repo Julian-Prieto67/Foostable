@@ -12,7 +12,7 @@ class Controller():
     def __init__(self, playback = False):
         self.playback = playback
 
-        self.ball_time = time.time()
+        
         self.ball_pos_real = np.array([0, 0])
         ##below is the current Ball state in the format [x, y, dx, dy] as a column vector
         self.ball_speed = np.array([0, 0])
@@ -23,8 +23,9 @@ class Controller():
         [self.ball_speed[1]]
         ])
         self.ball_pos_list = deque(maxlen = 2)
+        self.ball_time = deque(maxlen = 2)
         self.ball_trajectory = []
-        self.minSpeedthreshold = 50 ##minimum speed of the ball to be considered in possesion
+        self.minSpeedthreshold = 150 ##minimum speed of the ball to be considered in possesion
 
         self.ENDCHAR = '#'
         ##Dependency Injection for rods and arduino
@@ -63,7 +64,7 @@ class Controller():
         self.CalibrateRods()
     
     def showGUI(self):
-        self.ser.UpdateGui(self.ball_pos_real, self.corners_real, self.GRod, self.DRod, self.MRod, self.ARod, self.ball_speed)
+        self.ser.UpdateGui(self.ball_pos_real, self.corners_real, self.GRod, self.DRod, self.MRod, self.ARod, self.ball_speed, self.ball_trajectory)
         self.ser.showGUI()
 
     def ControlTimer(self):
@@ -72,14 +73,14 @@ class Controller():
         self.loop_start_time
         current_time = time.time()
         time_passed = current_time - self.loop_start_time
-        start_time = current_time
         self.loop_time = time_passed
+        self.loop_start_time = current_time
 
     def UpdateBallPos(self, ball_pos):
         self.ball_pos_real = ball_pos
-        self.ball_time = time.time()
         self.ball_trajectory = []
-        self.ball_pos_list.append((ball_pos, self.ball_time))
+        self.ball_time.append(time.time())
+        self.ball_pos_list.append((ball_pos[0], ball_pos[1]))
 
     def changeSpeed(self, speed):
         ## changes the speed of the stepper motor in steps per second max of like 100000
@@ -128,8 +129,8 @@ class Controller():
         if self.ball_trajectory == []:
             return
         for i in range(len(self.ball_trajectory)):
-            if self.ball_trajectory[i][0][0] > rod.x_level:
-                rod.setRodPos(self.ball_trajectory[i][0][1])
+            if self.ball_trajectory[i][0] > rod.x_level:
+                rod.setRodPos(self.ball_trajectory[i][1])
                 break
         rod.blockBall(self.ball_pos_real)
     
@@ -138,30 +139,33 @@ class Controller():
         ##this is a list of tuples of the form (ball_pos, ball_time)
         ##where ball_pos is the position of the ball and ball_time is the time the ball was at that position
         ##this is used to predict where the ball will be in the future
-        if len(self.ball_pos_list) < 2 or (self.ball_pos_list[0][1] - self.ball_pos_list[1][1]) == 0:
+        if len(self.ball_pos_list) < 2 or np.all(np.subtract(self.ball_pos_list[0], self.ball_pos_list[1])) == 0:
             return
-        predictTime = 3 ##looks ahead x many seconds in the future
+        
+        predictTime = 50 ##looks ahead x many steps in the future
         self.ball_trajectory = []
-        self.ball_speed = (self.ball_pos_list[0][0] - self.ball_pos_list[1][0]) / (self.ball_pos_list[0][1] - self.ball_pos_list[1][1])
+        ball_speed_x = (self.ball_pos_list[1][0] - self.ball_pos_list[0][0]) / (self.ball_time[1] - self.ball_time[0])
+        ball_speed_y = (self.ball_pos_list[1][1] - self.ball_pos_list[0][1]) / (self.ball_time[1] - self.ball_time[0])
+        self.ball_speed = np.array([ball_speed_x, ball_speed_y])
         #create local variable for speed and pos that can be changed
         ball_speed = self.ball_speed
-        ball_pos = self.ball_pos_list[0][0]
+        ball_pos = self.ball_pos_list[0]
         if np.linalg.norm(ball_speed) < self.minSpeedthreshold:
             return
-
-        for i in range(int(predictTime//self.loop_time)):
+        self.ball_trajectory.append(ball_pos)
+        for i in range(predictTime):
             ##predict where the ball will be for next loop time
-            ball_pos = self.ball_pos_list[0][0] + self.ball_speed * self.loop_time
+            ball_pos = self.ball_trajectory[i] + self.ball_speed * self.loop_time
         
             ##if the ball is going to hit the wall, change the speed and recalculate the position
             if ball_pos[0] > 46.375*25.4 or ball_pos[0] < 0.875*25.4:
                 ball_speed[0] = -ball_speed[0]
-                ball_pos = self.ball_pos_list[0][0] + ball_speed * self.loop_time
             if ball_pos[1] > 25.25*25.4 or ball_pos[1] < 0.625*25.4:
                 ball_speed[1] = -ball_speed[1]
-                ball_pos = self.ball_pos_list[0][0] + ball_speed * self.loop_time
+                
+            ball_pos = self.ball_trajectory[i] + ball_speed * self.loop_time
             ##add the ball position to the trajectory
-            self.ball_trajectory.append((ball_pos, self.ball_pos_list[0][1] + self.loop_time*i))
+            self.ball_trajectory.append(ball_pos)
 
     def findPossesion(self):
         ## first check if the speed is low enough to be in possesion and if the ball pos is not 0,0
@@ -187,7 +191,6 @@ class Controller():
         self.ControlTimer()
         self.findPossesion()
         self.generateTrajectory()
-        
         if self.possesion == 0:
             ##if the ball is not in my possesion, block the ball
             if self.ball_trajectory == []:

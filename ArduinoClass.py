@@ -45,13 +45,17 @@ class ArduinoFake(Arduino):
             text_loc = (int(rod.x_level)+20, int(y[1]))
             cv.putText(window, text, text_loc, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
-    def UpdateGui(self, ball_pos_real, corners_real, GRod, DRod, MRod, ARod, ball_speed):
+    def UpdateGui(self, ball_pos_real, corners_real, GRod, DRod, MRod, ARod, ball_speed, ball_trajectory):
         # Create a green window
         #every pixel is a mm
         window = np.zeros((660+self.screen_offset[1], 1203 +self.screen_offset[0], 3), dtype=np.uint8)
         ##make it green 
         window[:, :] = (0, 50, 0)
-    
+        # Draw white dots at the positions in ball_trajectory
+        for point in ball_trajectory:
+            point = np.array(point).astype(int)
+            point = tuple(point + self.screen_offset)
+            cv.circle(window, point, 5, (255, 255, 255), -1)
         # Draw green circles at the positions of self.corners_image
         for corner in corners_real:
             cv.circle(window, self.tupleadd(tuple(corner.astype(int)),self.screen_offset), 2, (0, 255, 0), -1)

@@ -70,7 +70,6 @@ def vision_process(queue, playback):
         ##FIND THE POSITION OF THE BALL
         vision.UpdateFrame()
         BallPos = vision.getBallPos()
-        print(BallPos)
 
         ##send the data to the queue
         queue.put(BallPos)
