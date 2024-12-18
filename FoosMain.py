@@ -67,14 +67,14 @@ def vision_process(queue, playback):
     vision = Vision(playback)
     while True:
     ##find the ball and send data to the queue
-        ##FIND THE POSITION OF THE BALL
         vision.UpdateFrame()
         BallPos = vision.getBallPos()
 
         ##send the data to the queue
         queue.put(BallPos)
         ##Time the function
-        vision.ShowField()
+        if playback:
+            vision.ShowField()
         VisionTimer()
 
 
