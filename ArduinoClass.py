@@ -45,7 +45,7 @@ class ArduinoFake(Arduino):
             text_loc = (int(rod.x_level)+20, int(y[1]))
             cv.putText(window, text, text_loc, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
-    def UpdateGui(self, ball_pos_real, corners_real, GRod, DRod, MRod, ARod, ball_speed, ball_trajectory):
+    def UpdateGui(self, ball_pos_real, corners_real, GRod, DRod, MRod, ARod, ball_speed, ball_trajectory, rodsKicking):
         # Create a green window
         #every pixel is a mm
         window = np.zeros((660+self.screen_offset[1], 1203 +self.screen_offset[0], 3), dtype=np.uint8)
@@ -80,15 +80,23 @@ class ArduinoFake(Arduino):
         
     
         # Draw the foosmen as dots 
-        for player in [GRod, DRod, MRod, ARod]:
+        for i, player in enumerate([GRod, DRod, MRod, ARod]):
             posList = player.returnPlayerPos()
-            for index, pos in enumerate(posList):
-                pos = np.array(pos).astype(int)
-                if index == player.returnBlockingPlayer():
-                    cv.circle(window, self.tupleadd(pos,self.screen_offset), 2, (0, 255, 255), -1)
-                else:
-                    cv.circle(window, self.tupleadd(pos,self.screen_offset), 2, (0, 0, 255), -1)
-            
+            if not rodsKicking[i]:
+                for index, pos in enumerate(posList):
+                    pos = np.array(pos).astype(int)
+                    if index == player.returnBlockingPlayer():
+                        cv.circle(window, self.tupleadd(pos,self.screen_offset), 2, (0, 255, 255), -1)
+                    else:
+                        cv.circle(window, self.tupleadd(pos,self.screen_offset), 2, (0, 0, 255), -1)
+            else:
+                for index, pos in enumerate(posList):
+                    pos = np.array(pos).astype(int)
+                    if index == player.returnBlockingPlayer():
+                        cv.circle(window, self.tupleadd(pos,self.screen_offset), 5, (0, 255, 255), -1)
+                    else:
+                        cv.circle(window, self.tupleadd(pos,self.screen_offset), 5, (0, 0, 255), -1)
+
         self.gui = window
     def showGUI(self):
         showthis = cv.resize(self.gui, (640, 480))

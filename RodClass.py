@@ -80,6 +80,7 @@ class Rod:
         ##MOTEUS CONTROLLER
         self.motor_state = None
         self.kickTimer = time.time()
+        self.kick = False
         self.max_torque = 1.2
         self.vel_lim = 55
 
@@ -155,7 +156,7 @@ class Rod:
         ## Block the ball at the given position using the nearest player to the ball
         ## ballPos is the position of the ball in mm
 
-        if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos) or ballPos[0] < self.x_level:
+        if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos) or ballPos[0] < self.x_level-50:
             # print("Player " + str(self.Player) + " is in default position")   
             self.setRodPos(self.defaultPos)
             return
@@ -221,19 +222,16 @@ class Rod:
             return True
         return False
 
-    async def kickAtWill(self, ballPos):
+    def kickAtWill(self, ballPos):
         ##Kick the ball whenever the rod is in position
+        self.setRodAngle(self.rest)
         if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos):
-            self.setRodAngle(self.rest)
-            await self.RotateRod(kick = False)
             return
         if ballPos[0] > self.x_level - 25.4 and ballPos[0] < self.x_level + 25.4:
-            await self.RotateRod(kick = True)
-        else:
-            self.setRodAngle(self.rest)
-            await self.RotateRod(kick = False)
+            self.setRodAngle(self.kickAngle)
+            self.kick = True
 
-    async def RotateRod(self, kick = False):
+    async def RotateRod(self):
         pass
 
     def returnPlayerPos(self):
@@ -247,18 +245,19 @@ class RodReal(Rod):
         super().__init__(Player)
         self.mot = moteus.Controller(self.Player)
     
-    async def RotateRod(self, kick = False):
+    async def RotateRod(self):
         ##called as much as possible. Will rotate the rod to the currrent rodAngle
 
-        if kick and (time.time() - self.kickTimer > 1.3):
+        if self.kick and (time.time() - self.kickTimer > 1.3):
             await self.mot.set_position(
-            position=self.kickAngle,
+            position=self.rodAngle,
             velocity = 55,
             maximum_torque = self.max_torque,
             accel_limit=300.0,
             velocity_limit= self.vel_lim,
             )
             self.kickTimer = time.time()
+            self.kick = False
         else:
             # print("enterif ")
             await self.mot.set_position(

@@ -84,10 +84,12 @@ def Controls_process(queue, playback):
     while True:
         if playback:
             controls.showGUI()
+
+
         if not queue.empty():
             BallPos = queue.get()
             controls.UpdateBallPos(BallPos)
-        asyncio.run(controls.Play())
+        asyncio.run(controls.Play2())
         ControlTimer()
 
 

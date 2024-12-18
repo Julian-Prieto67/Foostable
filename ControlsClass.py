@@ -26,7 +26,7 @@ class Controller():
         self.ball_time = deque(maxlen = 2)
         self.ball_trajectory = []
         self.minSpeedthreshold = 150 ##minimum speed of the ball to be considered in possesion
-
+        self.rodsKicking = [0, 0, 0, 0] ##stores the rod kicking status
         self.ENDCHAR = '#'
         ##Dependency Injection for rods and arduino
         
@@ -64,7 +64,7 @@ class Controller():
         self.CalibrateRods()
     
     def showGUI(self):
-        self.ser.UpdateGui(self.ball_pos_real, self.corners_real, self.GRod, self.DRod, self.MRod, self.ARod, self.ball_speed, self.ball_trajectory)
+        self.ser.UpdateGui(self.ball_pos_real, self.corners_real, self.GRod, self.DRod, self.MRod, self.ARod, self.ball_speed, self.ball_trajectory, self.rodsKicking)
         self.ser.showGUI()
 
     def ControlTimer(self):
@@ -117,16 +117,13 @@ class Controller():
         self.ARod.blockBall(self.ball_pos_real)
     def goalTend(self):
         ##Advanced blocking function that blocks only with the defense and keeps goalie still until trajectory is found
-        if self.ball_trajectory == []:
-            self.GRod.setRodPos(self.GRod.RodRange[0]+self.GRod.RodRange[1]//2)
-            self.DRod.blockBall(self.ball_pos_real)
-        else:
-            self.blockTrajectory(self.GRod)
-            self.DRod.blockBall(self.ball_pos_real)
+        self.blockTrajectory(self.GRod)
+        self.DRod.blockBall(self.ball_pos_real)
     def blockTrajectory(self, rod):
         #block the ball with the rods using the trajectory
         #set the rod position to be the y position where the x trajectory intersects the x-level of the rod
         if self.ball_trajectory == []:
+            rod.blockBall(self.ball_pos_real)
             return
         for i in range(len(self.ball_trajectory)):
             if self.ball_trajectory[i][0] > rod.x_level:
@@ -144,14 +141,16 @@ class Controller():
         
         predictTime = 50 ##looks ahead x many steps in the future
         self.ball_trajectory = []
-        ball_speed_x = (self.ball_pos_list[1][0] - self.ball_pos_list[0][0]) / (self.ball_time[1] - self.ball_time[0])
-        ball_speed_y = (self.ball_pos_list[1][1] - self.ball_pos_list[0][1]) / (self.ball_time[1] - self.ball_time[0])
+        ball_speed_x = min(750, (self.ball_pos_list[1][0] - self.ball_pos_list[0][0]) / (self.ball_time[1] - self.ball_time[0]))
+        ball_speed_y = min(750, (self.ball_pos_list[1][1] - self.ball_pos_list[0][1]) / (self.ball_time[1] - self.ball_time[0]))
         self.ball_speed = np.array([ball_speed_x, ball_speed_y])
         #create local variable for speed and pos that can be changed
         ball_speed = self.ball_speed
         ball_pos = self.ball_pos_list[0]
         if np.linalg.norm(ball_speed) < self.minSpeedthreshold:
             return
+        if np.linalg.norm(ball_speed) > 300:
+            predictTime = 10
         self.ball_trajectory.append(ball_pos)
         for i in range(predictTime):
             ##predict where the ball will be for next loop time
@@ -185,39 +184,59 @@ class Controller():
         else:
             return 0
         
-    #######FIX KICKING
     async def Play(self):
         ##Execute the control loop
         self.ControlTimer()
-        self.findPossesion()
-        self.generateTrajectory()
-        if self.possesion == 0:
-            ##if the ball is not in my possesion, block the ball
-            if self.ball_trajectory == []:
-                ##if the ball trajectory is empty, block the ball using the current position
+        if self.ball_pos_list[0] == (0, 0) and self.ball_pos_list[1] == (0, 0):
+            self.GRod.goHome()
+            self.DRod.goHome()
+            self.MRod.goHome()
+            self.ARod.goHome()
+        else:
+            self.findPossesion()
+            self.generateTrajectory()
+            if self.possesion == 0:
                 self.blockBall()
                 self.goalTend()
+            if self.ball_trajectory != []:
+                for rod in [self.GRod, self.DRod, self.MRod, self.ARod]:
+                    self.blockTrajectory(rod)
             else:
-                ##if the ball trajectory is not empty, block the ball using the trajectory
-                ##set the rod position to be the y position where the x trajectory intersects the x-level of the rod
-                self.blockTrajectory(self.GRod)
-                self.blockTrajectory(self.DRod)
-                self.blockTrajectory(self.MRod)
-                self.blockTrajectory(self.ARod)
-        else:
-            ##if the ball is in my possesion wait until the ball is in the right position
-            ##then kick the ball
-            if self.GRod.checkBall(self.ball_pos_real):
-                self.GRod.blockBall(self.ball_pos_real)
-                await self.GRod.kickAtWill(self.ball_pos_real)
-            elif self.DRod.checkBall(self.ball_pos_real):
-                self.DRod.blockBall(self.ball_pos_real)
-                await self.DRod.kickAtWill(self.ball_pos_real)
-            elif self.MRod.checkBall(self.ball_pos_real):
-                self.MRod.blockBall(self.ball_pos_real)
-                await self.MRod.kickAtWill(self.ball_pos_real)
-            elif self.ARod.checkBall(self.ball_pos_real):
-                self.ARod.blockBall(self.ball_pos_real)
-                await self.ARod.kickAtWill(self.ball_pos_real)
-        await self.moveRods()
+                for i,rod in enumerate([self.GRod, self.DRod, self.MRod, self.ARod]):
+                    if rod.checkBall(self.ball_pos_real):
+                        rod.blockBall(self.ball_pos_real)
+                        rod.kickAtWill(self.ball_pos_real)
+                        self.rodsKicking[i] = 1
+                    else:
+                        self.rodsKicking[i] = 0
+        await self.moveRods() ##Executes the stored rod position and angle data
 
+    async def Play2(self):
+        ##Execute the control loop
+        self.ControlTimer()
+        if self.ball_pos_list[0] == (0, 0) and self.ball_pos_list[1] == (0, 0):
+            self.GRod.goHome()
+            self.DRod.goHome()
+            self.MRod.goHome()
+            self.ARod.goHome()
+        else:
+            self.findPossesion()
+            self.generateTrajectory()
+            self.blockTrajectory(self.GRod)
+            for rod in [self.GRod, self.DRod, self.MRod, self.ARod]:
+                if self.ball_pos_real[0] > rod.x_level-100 and self.ball_pos_real[0] < rod.x_level+100:
+                    self.blockTrajectory(rod)
+            else:
+                for i,rod in enumerate([self.GRod, self.DRod, self.MRod, self.ARod]):
+                    ##check if ball is in range
+                    if rod.checkBall(self.ball_pos_real):
+                        self.rodsKicking[i] = 1
+                        self.blockTrajectory(rod)
+                        time.sleep(0.01)
+                        rod.kickAtWill(self.ball_pos_real)
+                    else:
+                        self.rodsKicking[i] = 0
+                
+            
+                
+        await self.moveRods() ##Executes the stored rod position and angle data
