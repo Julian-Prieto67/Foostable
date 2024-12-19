@@ -173,6 +173,7 @@ class Rod:
         self.blockingPlayer = nearest_player
         # Adjust the rod position based on the nearest player's position
         self.setRodPos((ballPos[1] - self.PlayerPositions[nearest_player]) + self.rodPos)
+        self.setRodAngle(self.rest)
         return
     
     async def clearFaults(self):
@@ -227,7 +228,8 @@ class Rod:
         self.setRodAngle(self.rest)
         if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos):
             return
-        if ballPos[0] > self.x_level - 25.4 and ballPos[0] < self.x_level + 25.4:
+        if ballPos[0] > self.x_level - 2*25.4 and ballPos[0] < self.x_level + 2*25.4:
+            print("Rod " + str(self.Player) + " is kicking the ball")
             self.setRodAngle(self.kickAngle)
             self.kick = True
 

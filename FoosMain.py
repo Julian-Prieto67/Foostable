@@ -9,7 +9,7 @@ from VisionClass import Vision
 import asyncio
 
 
-playback = True
+playback = False
 
 
 global start_time
@@ -38,8 +38,8 @@ def ControlTimer():
     Accumulated_time = Accumulated_time + time_passed 
     timer_counter += 1
     if timer_counter > 5e2:
-        print("Average time for 500 calls to Controls function:")
-        print(Accumulated_time / timer_counter)
+        # print("Average time for 500 calls to Controls function:")
+        # print(Accumulated_time / timer_counter)
         timer_counter = 0
         Accumulated_time = 0
     return time_passed
@@ -57,8 +57,8 @@ def VisionTimer():
     Accumulated_time2 = Accumulated_time2 + time_passed 
     timer_counter2 += 1
     if timer_counter2 > 500:
-        print("Average time for 500 calls to Vision function:")
-        print(Accumulated_time2 / timer_counter2)
+        # print("Average time for 500 calls to Vision function:")
+        # print(Accumulated_time2 / timer_counter2)
         timer_counter2 = 0
         Accumulated_time2 = 0
     return time_passed
@@ -73,8 +73,9 @@ def vision_process(queue, playback):
         ##send the data to the queue
         queue.put(BallPos)
         ##Time the function
-        if playback:
-            vision.ShowField()
+        # if playback:
+        #     vision.ShowField()
+        vision.ShowField()
         VisionTimer()
 
 
@@ -82,10 +83,9 @@ def Controls_process(queue, playback):
     controls = Controller(playback)
     asyncio.run(controls.initializeClass())
     while True:
-        if playback:
-            controls.showGUI()
-
-
+        # if playback:
+        #   controls.showGUI()
+        controls.showGUI()
         if not queue.empty():
             BallPos = queue.get()
             controls.UpdateBallPos(BallPos)

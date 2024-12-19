@@ -28,7 +28,7 @@ class Vision:
 
         ##Camera Variables
         self.parser = argparse.ArgumentParser(description='Camera')
-        self.parser.add_argument('--camera', help='Camera divide number.', default=1, type=int)
+        self.parser.add_argument('--camera', help='Camera divide number.', default=0, type=int)
         self.args = self.parser.parse_args()
         # video_path = 'C:/Users/juls6/Desktop/Classes/FOOSTABLE/Software/Sample_Video/11-6-LightSample.mp4'
         video_path = '11-6LightSample2.mp4'
@@ -119,7 +119,7 @@ class Vision:
                 best_match_location = max_loc
                 best_template = template
 
-        return best_template, best_match_location
+        return best_template, best_match_location, max_val
     
     def findballxy(self):
         b_thresholds = [3,
@@ -147,8 +147,9 @@ class Vision:
         best_match_location = (0, 0)
         best_template = None
 
-        best_template, best_match_location = self.parallel_template_matching(self.Balltemplates, gray_frame)
-        if best_template is not None:
+        best_template, best_match_location, max_val = self.parallel_template_matching(self.Balltemplates, gray_frame)
+        
+        if best_template is not None and max_val > 0.91:
             top_left = best_match_location
             w, h = best_template.shape[::-1]
             bottom_right = (top_left[0] + w, top_left[1] + h) #uncomment both to draw rectangle on ball
