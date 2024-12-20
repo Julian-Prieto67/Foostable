@@ -89,7 +89,7 @@ def Controls_process(queue, playback):
         if not queue.empty():
             BallPos = queue.get()
             controls.UpdateBallPos(BallPos)
-        asyncio.run(controls.Play2())
+        asyncio.run(controls.Play())
         ControlTimer()
 
 

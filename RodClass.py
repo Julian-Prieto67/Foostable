@@ -211,7 +211,6 @@ class Rod:
         ##Set the rod angle in radians
         ##returns the current angle in radians as a float
         self.rodAngle = angle
-        self.kick = True
 
     def checkBall(self, ballPos):
         ##Check if the ball is in the range of the rod
@@ -219,20 +218,10 @@ class Rod:
         if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos):
             return False
         ##checks within an inch of the x-level for each player
-        if ballPos[0] > self.x_level - 25.4 and ballPos[0] < self.x_level + 25.4:
+        if ballPos[0] > self.x_level - 3.75*25.4 and ballPos[0] < self.x_level + 3.75*25.4:
             return True
         return False
-
-    def kickAtWill(self, ballPos):
-        ##Kick the ball whenever the rod is in position
-        self.setRodAngle(self.rest)
-        if any(pos is None for pos in ballPos) or any(pos == 0 for pos in ballPos):
-            return
-        if ballPos[0] > self.x_level - 2*25.4 and ballPos[0] < self.x_level + 2*25.4:
-            print("Rod " + str(self.Player) + " is kicking the ball")
-            self.setRodAngle(self.kickAngle)
-            self.kick = True
-
+    
     async def RotateRod(self):
         pass
 
