@@ -131,6 +131,8 @@ class Controller():
         
         predictTime = 50 ##looks ahead x many steps in the future
         self.ball_trajectory = []
+        ball_speed_x = 0
+        ball_speed_y = 0
         ball_speed_x = min(750, (self.ball_pos_list[1][0] - self.ball_pos_list[0][0]) / (self.ball_time[1] - self.ball_time[0]))
         ball_speed_y = min(750, (self.ball_pos_list[1][1] - self.ball_pos_list[0][1]) / (self.ball_time[1] - self.ball_time[0]))
         self.ball_speed = np.array([ball_speed_x, ball_speed_y])
@@ -173,7 +175,15 @@ class Controller():
             return 1
         else:
             return 0
-    
+        
+    async def stayDown(self):
+        self.ControlTimer()
+        if self.ball_pos_real[0] == 0 or self.ball_pos_real[1] == 0:
+            self.GRod.goHome()
+            self.DRod.goHome()
+            self.MRod.goHome()
+            self.ARod.goHome()
+
     async def Play(self):
         ##Execute the control loop
         self.ControlTimer()
@@ -183,33 +193,68 @@ class Controller():
             self.MRod.goHome()
             self.ARod.goHome()
         else:
-            self.findPossesion()
             self.generateTrajectory()
-            self.blockTrajectory(self.GRod)
-            if self.possesion == 0:
-                self.MRod.blockBall(self.ball_pos_real)
-                self.ARod.blockBall(self.ball_pos_real)
-                self.goalTend()
-            if self.ball_trajectory != []:
-                for rod in [self.GRod, self.DRod, self.MRod, self.ARod]:
-                    if self.ball_pos_real[0] > rod.x_level-381 and self.ball_pos_real[0] < rod.x_level+381:
-                        self.blockTrajectory(rod)
-            else:
-                ##Ball in our possesion
-                for i,rod in enumerate([self.GRod, self.DRod, self.MRod, self.ARod]):
-                    ##check if ball is in range
-                    if self.ball_pos_real[0] < rod.x_level- 3.75*25.4:
-                        rod.setRodAngle(rod.angle_up)
+            for rod in [self.GRod, self.DRod, self.MRod, self.ARod]:
+                if self.ball_pos_real[0] > rod.x_level-381/2 and self.ball_pos_real[0] < rod.x_level+381/2:
+                    self.blockTrajectory(rod)
+                    rod.setRodAngle(rod.rest)
+                    rod.kick = False
+
                     if rod.checkBall(self.ball_pos_real):
-                        self.rodsKicking[i] = 1
+                        self.rodsKicking[rod.Player-1] = 1
                         self.blockTrajectory(rod)
-                        rod.setRodAngle(rod.kickAngle)
-                        rod.kick = True
-                    else:
-                        self.rodsKicking[i] = 0
-                        rod.setRodAngle(rod.rest)
-                        rod.kick = False
-                
-            
-                
+                        if not rod.kick and time.time() - rod.Kickball_timer > 1:
+                            rod.setRodAngle(rod.kickAngle)
+                            rod.kick = True 
+                            rod.Kickball_timer = time.time()
+                        else:
+                            if time.time() - rod.Kickball_timer > 0.5:
+                                rod.setRodAngle(rod.rest)
+                        if np.linalg.norm(self.ball_speed) < self.minSpeedthreshold:
+                            rod.setRodAngle(rod.rodAngle+2*np.pi)
+
+                if self.ball_pos_real[0] > self.ARod.x_level+3.75*25.4:
+                    self.ARod.setRodAngle(self.ARod.rest)
+                    self.GRod.setRodAngle(self.GRod.rest)
+                    self.DRod.setRodAngle(self.DRod.rest)
+                    self.MRod.setRodAngle(self.MRod.rest)
         await self.moveRods() ##Executes the stored rod position and angle data
+
+
+    # async def Play(self):
+    #     ##Execute the control loop
+    #     self.ControlTimer()
+    #     if self.ball_pos_real[0] == 0 or self.ball_pos_real[1] == 0:
+    #         self.GRod.goHome()
+    #         self.DRod.goHome()
+    #         self.MRod.goHome()
+    #         self.ARod.goHome()
+    #     else:
+    #         self.findPossesion()
+    #         self.generateTrajectory()
+    #         self.blockTrajectory(self.GRod)
+    #         if self.possesion == 0:
+    #             self.MRod.blockBall(self.ball_pos_real)
+    #             self.ARod.blockBall(self.ball_pos_real)
+    #             self.goalTend()
+    #         if self.ball_trajectory != []:
+    #             for rod in [self.GRod, self.DRod, self.MRod, self.ARod]:
+    #                 if self.ball_pos_real[0] > rod.x_level-381 and self.ball_pos_real[0] < rod.x_level+381:
+    #                     self.blockTrajectory(rod)
+    #         else:
+    #             ##Ball in our possesion
+    #             for i,rod in enumerate([self.GRod, self.DRod, self.MRod, self.ARod]):
+    #                 ##check if ball is in range
+    #                 if self.ball_pos_real[0] < rod.x_level- 3.75*25.4:
+    #                     rod.setRodAngle(rod.angle_up)
+    #                 if rod.checkBall(self.ball_pos_real) :
+    #                     self.rodsKicking[i] = 1
+    #                     self.blockTrajectory(rod)
+    #                     if not rod.kick:
+    #                         rod.setRodAngle(rod.kickAngle)
+    #                         rod.kick = True
+    #                 else:
+    #                     self.rodsKicking[i] = 0
+    #                     rod.setRodAngle(rod.rest)
+    #                     rod.kick = False
+    #     await self.moveRods() ##Executes the stored rod position and angle data

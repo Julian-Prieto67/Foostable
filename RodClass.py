@@ -87,7 +87,7 @@ class Rod:
         self.Kickball_timer = time.time()
         self.angle_up = math.radians(-90) #puts the rod up (rad)
         self.rest = 0 #puts the rod down (rad)
-        self.kickAngle = 1 #(rad) to kick ball from wherever
+        self.kickAngle = 1*math.pi #(rad) to kick ball from wherever
         # await self.mot.set_stop()
         self.blockingPlayer = None
         self.defineBoundaries()
